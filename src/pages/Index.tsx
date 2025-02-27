@@ -5,7 +5,7 @@ import Hero from '@/components/Hero';
 import Features from '@/components/Features';
 import Footer from '@/components/Footer';
 import Button from '@/components/Button';
-import { Check, Users, BarChart, Gift } from 'lucide-react';
+import { Check, Users, BarChart, Compass, FileEdit } from 'lucide-react';
 
 const Index = () => {
   const [isVisible, setIsVisible] = useState({
