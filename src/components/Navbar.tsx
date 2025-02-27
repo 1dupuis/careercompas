@@ -1,12 +1,13 @@
 
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import Button from './Button';
 import { Menu, X } from 'lucide-react';
 
 const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const location = useLocation();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -25,6 +26,10 @@ const Navbar = () => {
     setIsMenuOpen(!isMenuOpen);
   };
 
+  const isActive = (path: string) => {
+    return location.pathname === path;
+  };
+
   return (
     <nav
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
@@ -40,19 +45,44 @@ const Navbar = () => {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-8">
-            <Link to="/" className="text-sm font-medium hover:opacity-80 transition-opacity">
+            <Link 
+              to="/" 
+              className={`text-sm font-medium hover:opacity-80 transition-opacity ${
+                isActive('/') ? 'text-primary' : ''
+              }`}
+            >
               Home
             </Link>
-            <Link to="/assessment" className="text-sm font-medium hover:opacity-80 transition-opacity">
+            <Link 
+              to="/assessment" 
+              className={`text-sm font-medium hover:opacity-80 transition-opacity ${
+                isActive('/assessment') ? 'text-primary' : ''
+              }`}
+            >
               Assessment
             </Link>
-            <Link to="/skills" className="text-sm font-medium hover:opacity-80 transition-opacity">
+            <Link 
+              to="/skills" 
+              className={`text-sm font-medium hover:opacity-80 transition-opacity ${
+                isActive('/skills') ? 'text-primary' : ''
+              }`}
+            >
               Skills
             </Link>
-            <Link to="/resume" className="text-sm font-medium hover:opacity-80 transition-opacity">
+            <Link 
+              to="/resume" 
+              className={`text-sm font-medium hover:opacity-80 transition-opacity ${
+                isActive('/resume') ? 'text-primary' : ''
+              }`}
+            >
               Resume
             </Link>
-            <Link to="/market" className="text-sm font-medium hover:opacity-80 transition-opacity">
+            <Link 
+              to="/market" 
+              className={`text-sm font-medium hover:opacity-80 transition-opacity ${
+                isActive('/market') ? 'text-primary' : ''
+              }`}
+            >
               Market Insights
             </Link>
           </div>
@@ -77,35 +107,45 @@ const Navbar = () => {
           <div className="py-4 px-4 space-y-4">
             <Link 
               to="/" 
-              className="block text-sm font-medium py-2 hover:opacity-80 transition-opacity"
+              className={`block text-sm font-medium py-2 hover:opacity-80 transition-opacity ${
+                isActive('/') ? 'text-primary' : ''
+              }`}
               onClick={() => setIsMenuOpen(false)}
             >
               Home
             </Link>
             <Link 
               to="/assessment" 
-              className="block text-sm font-medium py-2 hover:opacity-80 transition-opacity"
+              className={`block text-sm font-medium py-2 hover:opacity-80 transition-opacity ${
+                isActive('/assessment') ? 'text-primary' : ''
+              }`}
               onClick={() => setIsMenuOpen(false)}
             >
               Assessment
             </Link>
             <Link 
               to="/skills" 
-              className="block text-sm font-medium py-2 hover:opacity-80 transition-opacity"
+              className={`block text-sm font-medium py-2 hover:opacity-80 transition-opacity ${
+                isActive('/skills') ? 'text-primary' : ''
+              }`}
               onClick={() => setIsMenuOpen(false)}
             >
               Skills
             </Link>
             <Link 
               to="/resume" 
-              className="block text-sm font-medium py-2 hover:opacity-80 transition-opacity"
+              className={`block text-sm font-medium py-2 hover:opacity-80 transition-opacity ${
+                isActive('/resume') ? 'text-primary' : ''
+              }`}
               onClick={() => setIsMenuOpen(false)}
             >
               Resume
             </Link>
             <Link 
               to="/market" 
-              className="block text-sm font-medium py-2 hover:opacity-80 transition-opacity"
+              className={`block text-sm font-medium py-2 hover:opacity-80 transition-opacity ${
+                isActive('/market') ? 'text-primary' : ''
+              }`}
               onClick={() => setIsMenuOpen(false)}
             >
               Market Insights

@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import Button from './Button';
 import { ArrowRight } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 const Hero = () => {
   const [isVisible, setIsVisible] = useState(false);
@@ -68,9 +69,11 @@ const Hero = () => {
           className={`flex flex-col sm:flex-row items-center justify-center gap-4 mt-8 transition-opacity duration-1000 ${isVisible ? 'opacity-100' : 'opacity-0'}`}
           style={{ transitionDelay: '700ms' }}
         >
-          <Button size="lg" className="w-full sm:w-auto">
-            Start Your Assessment <ArrowRight className="ml-2 h-4 w-4" />
-          </Button>
+          <Link to="/assessment">
+            <Button size="lg" className="w-full sm:w-auto">
+              Start Your Assessment <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
+          </Link>
           <Button variant="outline" size="lg" className="w-full sm:w-auto">
             Explore Features
           </Button>
