@@ -496,7 +496,7 @@ const Assessment = () => {
                     onChange={(e) => setTimeframeValue(Number(e.target.value))}
                     className="h-9 rounded-md border border-input bg-background px-3 py-1 text-sm"
                   >
-                    <option value={0.5}>Short-term (< 1 year)</option>
+                    <option value={0.5}>Short-term (&lt; 1 year)</option>
                     <option value={1}>Medium-term (1-3 years)</option>
                     <option value={5}>Long-term (3+ years)</option>
                   </select>
