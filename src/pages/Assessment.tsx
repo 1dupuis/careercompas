@@ -97,6 +97,62 @@ const Note = ({ id, text, type, position, onRemove }: NoteProps) => {
   );
 };
 
+// Helper function to format the Gemini output with better styling
+const formatGeminiResponse = (text: string) => {
+  // Format career option titles (e.g., "Career Option 1: Software Developer")
+  let formattedText = text.replace(
+    /\*\*(Career Option \d+:[^*]+)\*\*/g, 
+    '<h2 class="text-xl font-bold mb-3 mt-6 pb-2 border-b text-primary">$1</h2>'
+  );
+  
+  // Format section titles (e.g., "Key Skills to Develop:")
+  formattedText = formattedText.replace(
+    /\*\*([^:*]+:)\*\*/g, 
+    '<h3 class="text-lg font-semibold mt-4 mb-2 text-primary-800">$1</h3>'
+  );
+  
+  // Format list items with bullet points
+  formattedText = formattedText.replace(
+    /\* \*\*([^:*]+:)\*\*([^*]+)/g, 
+    '<div class="ml-3 mb-3"><span class="font-semibold">• $1</span>$2</div>'
+  );
+  
+  // Format regular bullet points
+  formattedText = formattedText.replace(
+    /\* ([^*]+)/g, 
+    '<li class="ml-5 mb-1">$1</li>'
+  );
+  
+  // Wrap lists in ul tags
+  formattedText = formattedText.replace(
+    /(<li[^>]*>.*?<\/li>\n)+/gs, 
+    '<ul class="list-disc my-2">$&</ul>'
+  );
+  
+  // Format bold text
+  formattedText = formattedText.replace(
+    /\*\*([^*]+)\*\*/g, 
+    '<span class="font-bold">$1</span>'
+  );
+  
+  // Format italic text
+  formattedText = formattedText.replace(
+    /\*([^*]+)\*/g, 
+    '<span class="italic">$1</span>'
+  );
+  
+  // Format paragraphs - consecutive lines that aren't part of other formatting
+  formattedText = formattedText.replace(
+    /^([^<].+)$/gm, 
+    '<p class="mb-3">$1</p>'
+  );
+  
+  // Remove excess empty paragraphs
+  formattedText = formattedText.replace(/<p class="mb-3"><\/p>/g, '');
+  
+  return formattedText;
+};
+
 const Assessment = () => {
   const [notes, setNotes] = useState<Array<{
     id: string;
@@ -324,10 +380,8 @@ const Assessment = () => {
                     </div>
                   </div>
                 ) : response.text ? (
-                  <div className="prose prose-sm max-w-none">
-                    <div style={{ whiteSpace: 'pre-line' }}>
-                      {response.text}
-                    </div>
+                  <div className="prose prose-sm max-w-none rounded-md bg-white p-4 shadow-sm">
+                    <div dangerouslySetInnerHTML={{ __html: formatGeminiResponse(response.text) }} />
                   </div>
                 ) : (
                   <div className="h-full flex items-center justify-center text-center text-muted-foreground">
