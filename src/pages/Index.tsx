@@ -1,13 +1,17 @@
 
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import Hero from '@/components/Hero';
 import Features from '@/components/Features';
 import Footer from '@/components/Footer';
 import Button from '@/components/Button';
-import { Check, Users, BarChart, Compass, FileEdit } from 'lucide-react';
+import { Check, Users, BarChart, Compass, FileEdit, ArrowRight } from 'lucide-react';
+import { useToast } from "@/hooks/use-toast";
 
 const Index = () => {
+  const navigate = useNavigate();
+  const { toast } = useToast();
   const [isVisible, setIsVisible] = useState({
     stats: false,
     testimonials: false,
@@ -47,6 +51,38 @@ const Index = () => {
     
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  const handleStartFreeTrial = () => {
+    toast({
+      title: "Free Trial Started",
+      description: "Welcome to CareerCompass AI! Your 14-day trial has begun.",
+      duration: 3000,
+    });
+    
+    setTimeout(() => {
+      navigate("/assessment");
+    }, 1000);
+  };
+
+  const handleGetStarted = () => {
+    navigate("/assessment");
+  };
+
+  const handleContactSales = () => {
+    toast({
+      title: "Contact Request Sent",
+      description: "Our sales team will contact you shortly. Thank you for your interest!",
+      duration: 3000,
+    });
+  };
+
+  const handleScheduleDemo = () => {
+    toast({
+      title: "Demo Scheduled",
+      description: "A confirmation email has been sent with your demo details.",
+      duration: 3000,
+    });
+  };
 
   const testimonials = [
     {
@@ -89,7 +125,7 @@ const Index = () => {
                     isVisible.stats 
                       ? 'opacity-100 translate-y-0' 
                       : 'opacity-0 translate-y-10'
-                  }`}
+                  } hover:shadow-md hover:-translate-y-1`}
                   style={{ transitionDelay: `${index * 100}ms` }}
                 >
                   <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-primary/10 mb-4">
@@ -126,7 +162,7 @@ const Index = () => {
                     isVisible.testimonials 
                       ? 'opacity-100 translate-y-0' 
                       : 'opacity-0 translate-y-10'
-                  }`}
+                  } hover:shadow-lg hover:-translate-y-1`}
                   style={{ transitionDelay: `${index * 200}ms` }}
                 >
                   <div className="mb-4">
@@ -172,6 +208,7 @@ const Index = () => {
                     "Community access"
                   ],
                   cta: "Get Started",
+                  action: handleGetStarted,
                   variant: "outline"
                 },
                 {
@@ -187,6 +224,7 @@ const Index = () => {
                     "Job market trends"
                   ],
                   cta: "Start Free Trial",
+                  action: handleStartFreeTrial,
                   variant: "default",
                   highlighted: true
                 },
@@ -204,6 +242,7 @@ const Index = () => {
                     "Dedicated support"
                   ],
                   cta: "Contact Sales",
+                  action: handleContactSales,
                   variant: "outline"
                 }
               ].map((plan, index) => (
@@ -215,7 +254,7 @@ const Index = () => {
                     isVisible.pricing 
                       ? 'opacity-100 translate-y-0' 
                       : 'opacity-0 translate-y-10'
-                  }`}
+                  } hover:shadow-lg`}
                   style={{ transitionDelay: `${index * 200}ms` }}
                 >
                   {plan.highlighted && (
@@ -239,9 +278,13 @@ const Index = () => {
                   </ul>
                   <Button 
                     variant={plan.variant as any} 
-                    className="w-full"
+                    className="w-full group"
+                    onClick={plan.action}
                   >
                     {plan.cta}
+                    {plan.highlighted && (
+                      <ArrowRight className="ml-2 h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
+                    )}
                   </Button>
                 </div>
               ))}
@@ -254,15 +297,20 @@ const Index = () => {
           <div 
             className={`container mx-auto max-w-5xl glass-card p-10 md:p-16 rounded-2xl text-center transition-all duration-700 ${
               isVisible.cta ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
-            }`}
+            } hover:shadow-xl`}
           >
             <h2 className="text-3xl md:text-4xl font-bold mb-6">Ready to future-proof your career?</h2>
             <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto">
               Join thousands of professionals who are navigating their career journeys with confidence using CareerCompass AI.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Button size="lg">Start Free Assessment</Button>
-              <Button variant="outline" size="lg">Schedule a Demo</Button>
+              <Button size="lg" className="group" onClick={handleGetStarted}>
+                Start Free Assessment
+                <ArrowRight className="ml-2 h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
+              </Button>
+              <Button variant="outline" size="lg" onClick={handleScheduleDemo}>
+                Schedule a Demo
+              </Button>
             </div>
           </div>
         </section>
