@@ -9,7 +9,7 @@ import {
   PlusCircle, XCircle, Loader2, ThumbsUp, ThumbsDown, 
   Save, Download, Lightbulb, Trophy, Brain, Award,
   Layers, BarChart3, DollarSign, TrendingUp, Briefcase,
-  BookOpen
+  BookOpen, Sparkles, ArrowRight, ScanSearch, Palette, RotateCw, FileDown, MagicWand
 } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 
@@ -20,17 +20,31 @@ interface NoteProps {
   position: { x: number; y: number };
   timeframe?: number; // years (for goals only)
   onRemove: (id: string) => void;
+  color?: string; // Optional custom color
+  aiGenerated?: boolean; // Flag for AI-generated notes
 }
 
-const Note = ({ id, text, type, position, timeframe, onRemove }: NoteProps) => {
+const Note = ({ id, text, type, position, timeframe, onRemove, color, aiGenerated }: NoteProps) => {
   const [pos, setPos] = useState(position);
   const [isDragging, setIsDragging] = useState(false);
+  const [isFlipped, setIsFlipped] = useState(false);
   const noteRef = useRef<HTMLDivElement>(null);
 
-  const colors = getNoteColorsByType(type);
+  const colors = color ? { 
+    bg: `bg-${color}-50`, 
+    border: `border-${color}-200`,
+    shadow: `shadow-${color}-100`,
+    icon: `text-${color}-500`
+  } : getNoteColorsByType(type);
 
   const handleMouseDown = (e: React.MouseEvent) => {
-    setIsDragging(true);
+    if (e.button === 0) { // Left mouse button only
+      setIsDragging(true);
+    }
+  };
+
+  const handleDoubleClick = () => {
+    setIsFlipped(!isFlipped);
   };
 
   const getIconByType = () => {
@@ -88,28 +102,56 @@ const Note = ({ id, text, type, position, timeframe, onRemove }: NoteProps) => {
   return (
     <div
       ref={noteRef}
-      className={`absolute p-3 rounded-md border ${colors.bg} ${colors.border} ${colors.shadow} shadow w-48 cursor-move transition-shadow hover:shadow-md`}
+      className={`absolute p-3 rounded-lg border ${colors.bg} ${colors.border} ${colors.shadow} shadow-md w-48 cursor-move transition-all duration-300 hover:shadow-lg perspective`}
       style={{ 
         left: `${pos.x}px`, 
         top: `${pos.y}px`,
-        transform: isDragging ? 'rotate(2deg) scale(1.02)' : 'rotate(0deg) scale(1)',
-        zIndex: isDragging ? 10 : 1
+        transform: isDragging ? 'rotate(2deg) scale(1.05)' : isFlipped ? 'rotateY(180deg)' : 'rotate(0deg) scale(1)',
+        zIndex: isDragging ? 10 : 1,
+        transformStyle: 'preserve-3d'
       }}
       onMouseDown={handleMouseDown}
+      onDoubleClick={handleDoubleClick}
     >
-      <button 
-        className="absolute -top-2 -right-2 text-gray-500 hover:text-gray-700"
-        onClick={() => onRemove(id)}
-      >
-        <XCircle size={18} />
-      </button>
-      <div className="flex items-center mb-2">
-        {getIconByType()}
-        <span className="text-xs font-medium ml-1">
-          {getTypeLabel()}
-        </span>
+      <div className={`relative ${isFlipped ? 'opacity-0' : 'opacity-100'} transition-opacity duration-300`}>
+        <button 
+          className="absolute -top-2 -right-2 text-gray-500 hover:text-gray-700 bg-white rounded-full shadow-sm"
+          onClick={(e) => {
+            e.stopPropagation();
+            onRemove(id);
+          }}
+        >
+          <XCircle size={18} />
+        </button>
+        <div className="flex items-center mb-2">
+          {getIconByType()}
+          <span className="text-xs font-medium ml-1 flex items-center">
+            {getTypeLabel()}
+            {aiGenerated && (
+              <span className="ml-1 text-purple-500">
+                <Sparkles size={10} className="inline" />
+              </span>
+            )}
+          </span>
+        </div>
+        <p className="text-sm">{text}</p>
       </div>
-      <p className="text-sm">{text}</p>
+
+      {/* Back of the note (shown when flipped) */}
+      <div 
+        className={`absolute inset-0 p-3 bg-white rounded-lg transform rotateY-180 backface-hidden ${isFlipped ? 'opacity-100' : 'opacity-0'} transition-opacity duration-300`}
+        style={{ transform: 'rotateY(180deg)' }}
+      >
+        <h4 className="text-xs font-medium mb-1">Related skills:</h4>
+        <ul className="text-xs text-gray-600 list-disc ml-4 mb-2">
+          <li>Communication</li>
+          <li>Problem solving</li>
+          <li>Critical thinking</li>
+        </ul>
+        <div className="text-xs text-gray-500 italic">
+          Double-click to flip back
+        </div>
+      </div>
     </div>
   );
 };
@@ -226,6 +268,14 @@ const SkillGapCard = ({ skillGap }: { skillGap: SkillGap }) => {
   );
 };
 
+// Custom theme colors for notes
+const noteThemes = [
+  { name: 'Default', colors: {} },
+  { name: 'Colorful', colors: { interest: 'green', dislike: 'red', skill: 'blue', goal: 'purple' } },
+  { name: 'Pastel', colors: { interest: 'emerald', dislike: 'rose', skill: 'sky', goal: 'violet' } },
+  { name: 'Monochrome', colors: { interest: 'gray', dislike: 'gray', skill: 'gray', goal: 'gray' } },
+];
+
 const Assessment = () => {
   const [notes, setNotes] = useState<Array<{
     id: string;
@@ -233,6 +283,8 @@ const Assessment = () => {
     type: 'interest' | 'dislike' | 'skill' | 'goal';
     position: { x: number; y: number };
     timeframe?: number; // for goals only
+    color?: string;
+    aiGenerated?: boolean;
   }>>([]);
   
   const [inputValue, setInputValue] = useState('');
@@ -242,6 +294,10 @@ const Assessment = () => {
   const [showAIAssistant, setShowAIAssistant] = useState(false);
   const [aiSuggestions, setAiSuggestions] = useState<string[]>([]);
   const [aiLoading, setAiLoading] = useState(false);
+  const [selectedTheme, setSelectedTheme] = useState(0);
+  const [boardBackground, setBoardBackground] = useState('cork');
+  const [showTemplateModal, setShowTemplateModal] = useState(false);
+  const [showExportModal, setShowExportModal] = useState(false);
   
   const boardRef = useRef<HTMLDivElement>(null);
   const { 
@@ -255,6 +311,46 @@ const Assessment = () => {
   const { toast } = useToast();
   const [savedResult, setSavedResult] = useState('');
 
+  // Template presets for quick start
+  const templates = [
+    {
+      name: "Tech Career",
+      notes: [
+        { type: 'interest', text: 'Programming' },
+        { type: 'interest', text: 'Problem solving' },
+        { type: 'interest', text: 'Technology trends' },
+        { type: 'skill', text: 'JavaScript' },
+        { type: 'skill', text: 'Data structures' },
+        { type: 'dislike', text: 'Repetitive tasks' },
+        { type: 'goal', text: 'Become a senior developer', timeframe: 3 }
+      ]
+    },
+    {
+      name: "Creative Professional",
+      notes: [
+        { type: 'interest', text: 'Visual design' },
+        { type: 'interest', text: 'Storytelling' },
+        { type: 'interest', text: 'User experience' },
+        { type: 'skill', text: 'Adobe Creative Suite' },
+        { type: 'skill', text: 'UI/UX fundamentals' },
+        { type: 'dislike', text: 'Rigid structures' },
+        { type: 'goal', text: 'Lead a creative team', timeframe: 5 }
+      ]
+    },
+    {
+      name: "Business & Management",
+      notes: [
+        { type: 'interest', text: 'Strategic planning' },
+        { type: 'interest', text: 'Team leadership' },
+        { type: 'interest', text: 'Market analysis' },
+        { type: 'skill', text: 'Project management' },
+        { type: 'skill', text: 'Negotiation' },
+        { type: 'dislike', text: 'Micromanagement' },
+        { type: 'goal', text: 'Executive leadership position', timeframe: 5 }
+      ]
+    }
+  ];
+
   const addNote = () => {
     if (!inputValue.trim()) return;
     
@@ -266,11 +362,16 @@ const Assessment = () => {
     const randomX = Math.random() * maxWidth;
     const randomY = Math.random() * maxHeight;
     
+    // Get theme color if applicable
+    const themeColors = noteThemes[selectedTheme].colors;
+    const color = themeColors[selectedType as keyof typeof themeColors];
+    
     const newNote = {
       id: generateUniqueId(),
       text: inputValue,
       type: selectedType,
       position: { x: randomX, y: randomY },
+      color,
       ...(selectedType === 'goal' ? { timeframe: timeframeValue } : {})
     };
     
@@ -394,11 +495,17 @@ const Assessment = () => {
     const randomX = Math.random() * maxWidth;
     const randomY = Math.random() * maxHeight;
     
+    // Get theme color if applicable
+    const themeColors = noteThemes[selectedTheme].colors;
+    const color = themeColors['interest' as keyof typeof themeColors];
+    
     const newNote = {
       id: generateUniqueId(),
       text: suggestion,
       type: 'interest' as const,
-      position: { x: randomX, y: randomY }
+      position: { x: randomX, y: randomY },
+      color,
+      aiGenerated: true
     };
     
     setNotes(prev => [...prev, newNote]);
@@ -425,13 +532,176 @@ const Assessment = () => {
     }
   };
 
+  const handleAutoArrange = () => {
+    if (notes.length === 0) return;
+    
+    // Create a copy of the notes
+    const notesCopy = [...notes];
+    
+    // Calculate grid spacing
+    const boardRect = boardRef.current?.getBoundingClientRect();
+    if (!boardRect) return;
+    
+    const noteWidth = 200; // Approximate note width
+    const noteHeight = 150; // Approximate note height
+    const margin = 20;
+    
+    const cols = Math.floor((boardRect.width - margin) / (noteWidth + margin));
+    const rows = Math.ceil(notes.length / cols);
+    
+    // Position each note in a grid layout
+    const arrangedNotes = notesCopy.map((note, index) => {
+      const col = index % cols;
+      const row = Math.floor(index / cols);
+      
+      return {
+        ...note,
+        position: {
+          x: margin + col * (noteWidth + margin),
+          y: margin + row * (noteHeight + margin)
+        }
+      };
+    });
+    
+    setNotes(arrangedNotes);
+    
+    toast({
+      title: "Notes arranged",
+      description: "Your notes have been automatically arranged in a grid layout.",
+      duration: 2000,
+    });
+  };
+
+  const applyTemplate = (templateIndex: number) => {
+    const template = templates[templateIndex];
+    
+    // Generate positions for each note
+    const boardRect = boardRef.current?.getBoundingClientRect();
+    if (!boardRect) return;
+    
+    const maxWidth = boardRect.width - 200;
+    const maxHeight = boardRect.height - 150;
+    
+    // Get theme colors if applicable
+    const themeColors = noteThemes[selectedTheme].colors;
+    
+    const templateNotes = template.notes.map(note => {
+      const randomX = Math.random() * maxWidth;
+      const randomY = Math.random() * maxHeight;
+      
+      const color = themeColors[note.type as keyof typeof themeColors];
+      
+      return {
+        id: generateUniqueId(),
+        text: note.text,
+        type: note.type,
+        position: { x: randomX, y: randomY },
+        timeframe: note.timeframe,
+        color
+      };
+    });
+    
+    setNotes(templateNotes);
+    setShowTemplateModal(false);
+    
+    toast({
+      title: "Template applied",
+      description: `The "${template.name}" template has been applied to your board.`,
+      duration: 2000,
+    });
+  };
+
+  const exportBoard = () => {
+    const boardData = {
+      notes,
+      theme: selectedTheme,
+      background: boardBackground
+    };
+    
+    const dataStr = JSON.stringify(boardData, null, 2);
+    const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+    
+    const exportFileDefaultName = 'career-assessment-board.json';
+    
+    const linkElement = document.createElement('a');
+    linkElement.setAttribute('href', dataUri);
+    linkElement.setAttribute('download', exportFileDefaultName);
+    linkElement.click();
+    
+    setShowExportModal(false);
+    
+    toast({
+      title: "Board exported",
+      description: "Your board data has been exported as a JSON file.",
+      duration: 2000,
+    });
+  };
+
+  const importBoard = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const data = JSON.parse(e.target?.result as string);
+        
+        if (data.notes) {
+          setNotes(data.notes);
+          
+          // Optionally restore theme and background
+          if (typeof data.theme === 'number') {
+            setSelectedTheme(data.theme);
+          }
+          
+          if (data.background) {
+            setBoardBackground(data.background);
+          }
+          
+          toast({
+            title: "Board imported",
+            description: "Your board has been successfully imported.",
+            duration: 2000,
+          });
+        } else {
+          throw new Error('Invalid board data format');
+        }
+      } catch (error) {
+        toast({
+          title: "Import failed",
+          description: "The selected file is not a valid board export.",
+          variant: "destructive",
+        });
+      }
+    };
+    
+    reader.readAsText(file);
+    setShowExportModal(false);
+  };
+
+  // Board backgrounds
+  const backgrounds = {
+    cork: {
+      color: "bg-[#F9F7F5]",
+      pattern: `url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23cdcdcd' fill-opacity='0.1' fill-rule='evenodd'/%3E%3C/svg%3E")`
+    },
+    grid: {
+      color: "bg-white",
+      pattern: `url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23f1f1f1' fill-opacity='1' fill-rule='evenodd'%3E%3Cpath d='M0 38.59l2.83-2.83 1.41 1.41L1.41 40H0v-1.41zM0 1.4l2.83 2.83 1.41-1.41L1.41 0H0v1.41zM38.59 40l-2.83-2.83 1.41-1.41L40 38.59V40h-1.41zM40 1.41l-2.83 2.83-1.41-1.41L38.59 0H40v1.41zM20 18.6l2.83-2.83 1.41 1.41L21.41 20l2.83 2.83-1.41 1.41L20 21.41l-2.83 2.83-1.41-1.41L18.59 20l-2.83-2.83 1.41-1.41L20 18.59z'/%3E%3C/g%3E%3C/svg%3E")`
+    },
+    dots: {
+      color: "bg-slate-50",
+      pattern: `url("data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23d1d5db' fill-opacity='0.4' fill-rule='evenodd'%3E%3Ccircle cx='3' cy='3' r='3'/%3E%3Ccircle cx='13' cy='13' r='3'/%3E%3C/g%3E%3C/svg%3E")`
+    }
+  };
+
   return (
     <div className="flex flex-col min-h-screen">
       <Navbar />
       
       <main className="flex-1 px-4 py-16 mt-16">
         <div className="container mx-auto">
-          <div className="text-center mb-12">
+          <div className="text-center mb-8">
             <h1 className="text-3xl md:text-5xl font-bold mb-4">Career Assessment</h1>
             <p className="text-muted-foreground max-w-2xl mx-auto">
               Pin your interests, strengths, dislikes, and weaknesses to the corkboard below. 
@@ -439,7 +709,8 @@ const Assessment = () => {
             </p>
           </div>
           
-          <div className="glass-card p-4 rounded-xl mb-8">
+          {/* Toolbar for the corkboard */}
+          <div className="glass-card p-4 rounded-xl mb-6">
             <div className="flex flex-col sm:flex-row gap-3">
               <input
                 type="text"
@@ -509,24 +780,82 @@ const Assessment = () => {
               </div>
             </div>
             
-            {/* AI Assistant toggle */}
-            <div className="mt-3 flex items-center">
-              <button 
-                onClick={() => {
-                  setShowAIAssistant(!showAIAssistant);
-                  if (!showAIAssistant && notes.filter(n => n.type === 'interest').length > 0) {
-                    generateAISuggestions();
-                  }
-                }}
-                className="text-sm flex items-center gap-1 text-primary hover:text-primary/80 transition-colors"
-              >
-                <Lightbulb size={16} />
-                <span>{showAIAssistant ? 'Hide AI Assistant' : 'Show AI Assistant'}</span>
-              </button>
+            {/* Additional tools row */}
+            <div className="flex flex-wrap items-center justify-between gap-2 mt-3 border-t pt-3">
+              {/* Left side - AI Assistant toggle */}
+              <div className="flex items-center gap-2">
+                <button 
+                  onClick={() => {
+                    setShowAIAssistant(!showAIAssistant);
+                    if (!showAIAssistant && notes.filter(n => n.type === 'interest').length > 0) {
+                      generateAISuggestions();
+                    }
+                  }}
+                  className="text-sm flex items-center gap-1 text-primary hover:text-primary/80 transition-colors"
+                >
+                  <Lightbulb size={16} />
+                  <span>{showAIAssistant ? 'Hide AI Assistant' : 'Show AI Assistant'}</span>
+                </button>
+                
+                <div className="h-4 border-r border-gray-300 mx-1"></div>
+                  
+                <button 
+                  onClick={() => setShowTemplateModal(true)}
+                  className="text-sm flex items-center gap-1 text-primary hover:text-primary/80 transition-colors"
+                >
+                  <FileDown size={16} />
+                  <span>Templates</span>
+                </button>
+              </div>
               
-              <Button variant="outline" size="sm" onClick={clearBoard} className="ml-auto">
-                Clear Board
-              </Button>
+              {/* Right side - Theme and tools */}
+              <div className="flex items-center gap-2">
+                <select 
+                  value={selectedTheme}
+                  onChange={(e) => setSelectedTheme(Number(e.target.value))}
+                  className="h-8 text-xs rounded-md border border-input bg-background px-2 py-0 ring-offset-background disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {noteThemes.map((theme, index) => (
+                    <option key={index} value={index}>{theme.name}</option>
+                  ))}
+                </select>
+                
+                <select 
+                  value={boardBackground}
+                  onChange={(e) => setBoardBackground(e.target.value as keyof typeof backgrounds)}
+                  className="h-8 text-xs rounded-md border border-input bg-background px-2 py-0 ring-offset-background disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <option value="cork">Cork Background</option>
+                  <option value="grid">Grid Background</option>
+                  <option value="dots">Dots Background</option>
+                </select>
+                
+                <div className="flex items-center gap-1">
+                  <Button 
+                    variant="outline" 
+                    size="icon" 
+                    className="h-8 w-8" 
+                    onClick={handleAutoArrange}
+                    title="Auto-arrange notes"
+                  >
+                    <RotateCw size={14} />
+                  </Button>
+                  
+                  <Button 
+                    variant="outline" 
+                    size="icon" 
+                    className="h-8 w-8" 
+                    onClick={() => setShowExportModal(true)}
+                    title="Export/Import board"
+                  >
+                    <ScanSearch size={14} />
+                  </Button>
+                  
+                  <Button variant="outline" size="sm" onClick={clearBoard} className="h-8">
+                    Clear Board
+                  </Button>
+                </div>
+              </div>
             </div>
             
             {/* AI Assistant suggestions */}
@@ -549,7 +878,10 @@ const Assessment = () => {
                         <span>Thinking...</span>
                       </>
                     ) : (
-                      <span>Refresh</span>
+                      <span className="flex items-center gap-1">
+                        <MagicWand size={12} />
+                        Generate Suggestions
+                      </span>
                     )}
                   </Button>
                 </div>
@@ -568,15 +900,17 @@ const Assessment = () => {
                       <button
                         key={index}
                         onClick={() => addSuggestionToBoard(suggestion)}
-                        className="text-xs px-2 py-1 bg-white border border-primary/20 rounded-full hover:bg-primary/10 transition-colors"
+                        className="text-xs px-3 py-1.5 bg-white border border-primary/20 rounded-full hover:bg-primary/10 transition-colors flex items-center gap-1 group"
                       >
-                        + {suggestion}
+                        <Sparkles size={10} className="text-primary opacity-70 group-hover:opacity-100" />
+                        <span>{suggestion}</span>
+                        <PlusCircle size={12} className="ml-1 text-primary opacity-0 group-hover:opacity-100 transition-opacity" />
                       </button>
                     ))}
                   </div>
                 ) : (
                   <p className="text-sm text-muted-foreground">
-                    Click "Refresh" to generate suggestions based on your interests.
+                    Click "Generate Suggestions" to get AI-powered interest recommendations.
                   </p>
                 )}
               </div>
@@ -587,9 +921,9 @@ const Assessment = () => {
             <div className="lg:w-3/5">
               <div 
                 ref={boardRef}
-                className="h-[500px] rounded-xl relative overflow-hidden border border-dashed border-muted-foreground/30 p-4 bg-[#F9F7F5]"
+                className={`h-[500px] rounded-xl relative overflow-hidden border border-dashed border-muted-foreground/30 p-4 ${backgrounds[boardBackground as keyof typeof backgrounds].color}`}
                 style={{
-                  backgroundImage: `url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23cdcdcd' fill-opacity='0.1' fill-rule='evenodd'/%3E%3C/svg%3E")`,
+                  backgroundImage: backgrounds[boardBackground as keyof typeof backgrounds].pattern,
                 }}
               >
                 {notes.map(note => (
@@ -600,16 +934,33 @@ const Assessment = () => {
                     type={note.type}
                     position={note.position}
                     timeframe={note.timeframe}
+                    color={note.color}
+                    aiGenerated={note.aiGenerated}
                     onRemove={removeNote}
                   />
                 ))}
                 
                 {notes.length === 0 && (
                   <div className="absolute inset-0 flex items-center justify-center text-muted-foreground">
-                    <div className="text-center">
-                      <p className="mb-2">Your corkboard is empty</p>
-                      <p className="text-sm">Add interests, skills, goals, and dislikes using the form above</p>
+                    <div className="text-center p-5 rounded-lg bg-white/80 backdrop-blur-sm">
+                      <Sparkles size={32} className="mx-auto mb-2 text-primary/50" />
+                      <p className="mb-2 font-medium">Your corkboard is empty</p>
+                      <p className="text-sm mb-3">Add interests, skills, goals, and dislikes using the form above</p>
+                      <button 
+                        className="text-primary text-sm hover:underline flex items-center gap-1 mx-auto"
+                        onClick={() => setShowTemplateModal(true)}
+                      >
+                        <FileDown size={14} />
+                        Use a template to get started
+                      </button>
                     </div>
+                  </div>
+                )}
+                
+                {/* Double-click hint if there are notes */}
+                {notes.length > 0 && (
+                  <div className="absolute bottom-2 right-2 text-xs text-gray-500 bg-white/80 px-2 py-1 rounded-md">
+                    Double-click notes to flip them
                   </div>
                 )}
               </div>
@@ -639,14 +990,19 @@ const Assessment = () => {
                 <Button 
                   onClick={handleGenerateInsights} 
                   disabled={response.loading || (notes.length === 0)}
-                  className="min-w-[150px]"
+                  className="min-w-[150px] group"
                 >
                   {response.loading ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       Analyzing...
                     </>
-                  ) : "Generate Insights"}
+                  ) : (
+                    <>
+                      Generate Insights
+                      <Sparkles size={16} className="ml-2 text-primary-foreground/70 group-hover:text-primary-foreground" />
+                    </>
+                  )}
                 </Button>
               </div>
             </div>
@@ -800,6 +1156,91 @@ const Assessment = () => {
           </div>
         </div>
       </main>
+      
+      {/* Template modal */}
+      {showTemplateModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl p-6 w-full max-w-lg">
+            <h3 className="text-xl font-bold mb-4">Choose a Template</h3>
+            <div className="space-y-3 mb-6">
+              {templates.map((template, index) => (
+                <div 
+                  key={index}
+                  className="p-4 border rounded-lg hover:bg-secondary transition-colors cursor-pointer"
+                  onClick={() => applyTemplate(index)}
+                >
+                  <h4 className="font-medium">{template.name}</h4>
+                  <div className="mt-1 flex flex-wrap gap-1">
+                    {template.notes.map((note, noteIndex) => (
+                      <span 
+                        key={noteIndex}
+                        className={`text-xs px-2 py-0.5 rounded-full ${
+                          note.type === 'interest' ? 'bg-green-100 text-green-800' :
+                          note.type === 'dislike' ? 'bg-red-100 text-red-800' :
+                          note.type === 'skill' ? 'bg-blue-100 text-blue-800' :
+                          'bg-purple-100 text-purple-800'
+                        }`}
+                      >
+                        {note.text}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="flex justify-end">
+              <Button variant="outline" onClick={() => setShowTemplateModal(false)}>
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Export/Import modal */}
+      {showExportModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl p-6 w-full max-w-md">
+            <h3 className="text-xl font-bold mb-4">Export or Import Board</h3>
+            
+            <div className="space-y-4 mb-6">
+              <div className="p-4 border rounded-lg hover:bg-secondary transition-colors cursor-pointer"
+                onClick={exportBoard}
+              >
+                <div className="flex items-center">
+                  <FileDown size={20} className="mr-2 text-primary" />
+                  <div>
+                    <h4 className="font-medium">Export Board</h4>
+                    <p className="text-sm text-muted-foreground">Save your current board as a JSON file</p>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="p-4 border rounded-lg hover:bg-secondary transition-colors">
+                <div className="flex items-center mb-2">
+                  <ScanSearch size={20} className="mr-2 text-primary" />
+                  <div>
+                    <h4 className="font-medium">Import Board</h4>
+                    <p className="text-sm text-muted-foreground">Load a previously exported board</p>
+                  </div>
+                </div>
+                <input 
+                  type="file"
+                  accept=".json"
+                  onChange={importBoard}
+                  className="w-full text-sm p-1"
+                />
+              </div>
+            </div>
+            
+            <div className="flex justify-end">
+              <Button variant="outline" onClick={() => setShowExportModal(false)}>
+                Close
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
       
       <Footer />
     </div>
