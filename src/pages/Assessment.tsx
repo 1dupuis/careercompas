@@ -9,7 +9,7 @@ import {
   PlusCircle, XCircle, Loader2, ThumbsUp, ThumbsDown, 
   Save, Download, Lightbulb, Trophy, Brain, Award,
   Layers, BarChart3, DollarSign, TrendingUp, Briefcase,
-  BookOpen, Sparkles, ArrowRight, ScanSearch, Palette, RotateCw, FileDown, MagicWand
+  BookOpen, Sparkles, ArrowRight, ScanSearch, Palette, RotateCw, FileDown, Wand2
 } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 
@@ -316,37 +316,37 @@ const Assessment = () => {
     {
       name: "Tech Career",
       notes: [
-        { type: 'interest', text: 'Programming' },
-        { type: 'interest', text: 'Problem solving' },
-        { type: 'interest', text: 'Technology trends' },
-        { type: 'skill', text: 'JavaScript' },
-        { type: 'skill', text: 'Data structures' },
-        { type: 'dislike', text: 'Repetitive tasks' },
-        { type: 'goal', text: 'Become a senior developer', timeframe: 3 }
+        { type: 'interest' as const, text: 'Programming' },
+        { type: 'interest' as const, text: 'Problem solving' },
+        { type: 'interest' as const, text: 'Technology trends' },
+        { type: 'skill' as const, text: 'JavaScript' },
+        { type: 'skill' as const, text: 'Data structures' },
+        { type: 'dislike' as const, text: 'Repetitive tasks' },
+        { type: 'goal' as const, text: 'Become a senior developer', timeframe: 3 }
       ]
     },
     {
       name: "Creative Professional",
       notes: [
-        { type: 'interest', text: 'Visual design' },
-        { type: 'interest', text: 'Storytelling' },
-        { type: 'interest', text: 'User experience' },
-        { type: 'skill', text: 'Adobe Creative Suite' },
-        { type: 'skill', text: 'UI/UX fundamentals' },
-        { type: 'dislike', text: 'Rigid structures' },
-        { type: 'goal', text: 'Lead a creative team', timeframe: 5 }
+        { type: 'interest' as const, text: 'Visual design' },
+        { type: 'interest' as const, text: 'Storytelling' },
+        { type: 'interest' as const, text: 'User experience' },
+        { type: 'skill' as const, text: 'Adobe Creative Suite' },
+        { type: 'skill' as const, text: 'UI/UX fundamentals' },
+        { type: 'dislike' as const, text: 'Rigid structures' },
+        { type: 'goal' as const, text: 'Lead a creative team', timeframe: 5 }
       ]
     },
     {
       name: "Business & Management",
       notes: [
-        { type: 'interest', text: 'Strategic planning' },
-        { type: 'interest', text: 'Team leadership' },
-        { type: 'interest', text: 'Market analysis' },
-        { type: 'skill', text: 'Project management' },
-        { type: 'skill', text: 'Negotiation' },
-        { type: 'dislike', text: 'Micromanagement' },
-        { type: 'goal', text: 'Executive leadership position', timeframe: 5 }
+        { type: 'interest' as const, text: 'Strategic planning' },
+        { type: 'interest' as const, text: 'Team leadership' },
+        { type: 'interest' as const, text: 'Market analysis' },
+        { type: 'skill' as const, text: 'Project management' },
+        { type: 'skill' as const, text: 'Negotiation' },
+        { type: 'dislike' as const, text: 'Micromanagement' },
+        { type: 'goal' as const, text: 'Executive leadership position', timeframe: 5 }
       ]
     }
   ];
@@ -879,7 +879,7 @@ const Assessment = () => {
                       </>
                     ) : (
                       <span className="flex items-center gap-1">
-                        <MagicWand size={12} />
+                        <Wand2 size={12} />
                         Generate Suggestions
                       </span>
                     )}
